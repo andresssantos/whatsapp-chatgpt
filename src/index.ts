@@ -1,15 +1,14 @@
 const qrcode = require("qrcode-terminal");
-const { Client, MessageMedia } = require("whatsapp-web.js");
+const { Client, LocalAuth, MessageMedia } = require("whatsapp-web.js");
 const { Configuration, OpenAIApi } = require('openai');
+const fs = require('fs');
 
 // Environment variables
-require("dotenv").config()
-
-const apiKey = process.env.OPENAI_API_KEY
+require('dotenv').config()
 
 const configuration = new Configuration({
-    apiKey: apiKey,
-  })
+  apiKey: process.env.OPENAI_API_KEY,
+});
 const openai = new OpenAIApi(configuration);
 
 // Prefix check
@@ -17,7 +16,10 @@ const text_prefix = '!t'
 const image_prefix = '!i'
 
 // Whatsapp Client
-const client = new Client()
+// Use the saved values
+const client = new Client({
+  authStrategy: new LocalAuth()
+});
 
 // Entrypoint
 const start = async () => {
@@ -33,15 +35,14 @@ const start = async () => {
     })
 
     // Whatsapp message
-    client.on("message", async (message: any) => {
+    client.on("message_create", async (message: any) => {
         message.getChat()
         if (message.body.length == 0) return
-        if (message.from == "status@broadcast") return
 
-        if (message.body.toLowerCase().startsWith(text_prefix)) {
+        if (message.body.toString().startsWith(text_prefix)) {
             const prompt = message.body.substring(text_prefix.length + 1);
             await handleMessage(message, prompt, text_prefix)
-        }else if (message.body.toLowerCase().startsWith(image_prefix)) {
+        }else if (message.body.toString().startsWith(image_prefix)) {
             const prompt = message.body.substring(image_prefix.length + 1);
             await handleMessage(message, prompt, image_prefix)
         }
