@@ -17,6 +17,7 @@ const openai = new OpenAIApi(configuration);
 const text_prefix = '!t'
 const image_prefix = '!i'
 const audio_prefix = '!a'
+const completion_to_audio_prefix = '!tta'
 
 // Whatsapp Client
 // Use the saved values
@@ -54,16 +55,24 @@ const start = async () => {
         //     }
         // }
 
-        if (message.body.toString().startsWith(text_prefix)) {
+
+        if (message.body.toString().split(' ')[0] == text_prefix) {
+          console.log('ENTREI NO text_prefix')
             const prompt = message.body.substring(text_prefix.length + 1);
             await handleMessage(message, prompt, text_prefix)
-        }else if (message.body.toString().startsWith(image_prefix)) {
+        }else if (message.body.toString().split(' ')[0] == image_prefix) {
+          console.log('ENTREI NO image_prefix')
             const prompt = message.body.substring(image_prefix.length + 1);
             await handleMessage(message, prompt, image_prefix)
-        }else if (message.body.toString().startsWith(audio_prefix)) {
+        }else if (message.body.toString().split(' ')[0] == audio_prefix) {
+          console.log('ENTREI NO audio_prefix')
           const prompt = message.body.substring(audio_prefix.length + 1);
           await handleMessage(message, prompt, audio_prefix)
-      }
+        }else if (message.body.toString().split(' ')[0] == completion_to_audio_prefix) {
+          console.log('ENTREI NO completion_to_audio_prefix')
+          const prompt = message.body.substring(completion_to_audio_prefix.length + 1);
+          await handleMessage(message, prompt, completion_to_audio_prefix)
+        }
     })
 
     // client.on('message_revoke_everyone', async (after, before) => {
@@ -96,12 +105,19 @@ const handleMessage = async (message: any, prompt: any, prefix: any) => {
         // Send the prompt to the API
         console.log("[Whatsapp ChatGPT] Received imagec prompt from " + message.from + ": " + prompt)
 
-        if(prefix == text_prefix) {
+        if(prefix === text_prefix) {
+          console.log('ENTREI NO text_prefix')
           response = await generateText(prompt)
-        }else if(prefix == image_prefix) {
+        }else if(prefix === image_prefix) {
+          console.log('ENTREI NO image_prefix')
           response = await generateImage(prompt)
-        }else if(prefix == audio_prefix) {
+        }else if(prefix === audio_prefix) {
+          console.log('ENTREI NO audio_prefix')
           response = await generateAudio(prompt)
+        }else if(prefix === completion_to_audio_prefix) {
+          console.log('ENTREI NO completion_to_audio_prefix')
+          const completion = await generateText(prompt)
+          response = await generateAudio(completion)
         }
         
         console.log(`[Whatsapp ChatGPT] Answer to ${message.from}: ${response}`)
