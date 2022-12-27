@@ -10,6 +10,7 @@ export class ConversationHistory {
   
     constructor() {
       this.conversationsHistory = {}
+      this.readAllHistory()
     }
 
   private maxHistorySize = Number(process.env.MAX_HISTORY_SIZE); // tamanho máximo do histórico
@@ -43,6 +44,21 @@ export class ConversationHistory {
     }
     const data = fs.readFileSync(filePath);
     return JSON.parse(data);
+  }
+
+  readAllHistory() {
+    // Read all JSON files with the conversation histories
+    const files = fs.readdirSync('./');
+
+    // Filter the files to get only those that end with .json
+    const jsonFiles = files.filter((file) => file.endsWith('.json'));
+
+    // For each JSON file, read the content and store it in conversationsHistory
+    jsonFiles.forEach((file) => {
+      const id = file.replace('.json', '');
+      const conversationHistory = this.readHistory(id);
+      this.conversationsHistory[id] = conversationHistory;
+    });
   }
 
   deleteOldestMessage(id: string) {

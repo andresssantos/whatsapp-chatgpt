@@ -8,6 +8,9 @@ import { ConversationHistory } from './conversation-history';
 const util = new Util()
 const commandHandler = new CommandHandler();
 const conversationHistory = new ConversationHistory();
+const BROADCAST_STATUS = "status@broadcast"
+
+conversationHistory.readAllHistory()
 
 // Environment variables
 require('dotenv').config()
@@ -32,42 +35,40 @@ const start = async () => {
 
   // Whatsapp message
   client.on("message_create", async (message: any) => {    
-    if (message.from == "status@broadcast") return
+    let response: any;
+    let conversationHistoryString = '';
+    if (message.from == BROADCAST_STATUS) return
 
     try {
-      let response: any;
-      let conversationHistoryString = '';
-  
       const data = await conversationHistory.readHistory(message._data.id.remote);
-      if(data){
-        data.map((message: string) => {
-          conversationHistoryString += message;
-        });
-      }
+      if (Array.isArray(data) && data.length > 0) {
+        conversationHistoryString = data.reduce((acc: string, message: string) => {
+          return acc + message;
+        }, '');
+      }    
       
       const prefix = message.body.toString().split(' ')[0];
       const commandFunction = commandHandler.prefixFunctions[prefix];
 
       if (commandFunction) {
         const prompt = util.addPunctuation(message.body.substring(prefix.length + 1));
-        const start = Date.now();
   
-        console.log("[Whatsapp ChatGPT] Received imagec prompt from " + message._data.notifyName + ": " + prompt);
-  
-        if(commandFunction == commandHandler.handleImageCommand){
-          response = await commandFunction(prompt);  
-        } else {
-          response = await commandFunction(conversationHistoryString + prompt);
-        }
-  
+        console.log(`[Whatsapp ChatGPT] Received prompt from ${message._data.notifyName}: ${prompt}`);
+
+        const start = Date.now();  
+        response = commandFunction == commandHandler.handleImageCommand ?
+           await commandFunction(prompt) :
+           await commandFunction(conversationHistoryString + prompt);
         const end = Date.now();
   
         console.log(`[Whatsapp ChatGPT] Answer to ${message.from}: ${response}`);
         console.log(`[Whatsapp ChatGPT] Time elapsed: ${(end - start) / 1000} seconds`);
         
-        if(response != undefined){
+        if (typeof response !== 'undefined' && response !== '') {
           conversationHistory.storeMessage(message._data.id.remote, prompt, response);
           message.reply(response);
+        } else {
+          message.reply("Desculpe, não entendi o que você quer dizer.");
         }
       }
     } catch (error) {
