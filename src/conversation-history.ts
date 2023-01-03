@@ -6,12 +6,12 @@ import { Util } from './util';
 require('dotenv').config()
 
 export class ConversationHistory {
-    private conversationsHistory: any;
-  
-    constructor() {
-      this.conversationsHistory = {}
-      this.readAllHistory()
-    }
+  private conversationsHistory: any;
+
+  constructor() {
+    this.conversationsHistory = {}
+    this.readAllHistory()
+  }
 
   private maxHistorySize = Number(process.env.MAX_HISTORY_SIZE); // tamanho máximo do histórico
 

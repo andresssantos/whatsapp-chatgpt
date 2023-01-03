@@ -1,6 +1,5 @@
 const qrcode = require("qrcode-terminal");
 const { Client, LocalAuth } = require("whatsapp-web.js");
-const delay = require('delay');
 
 import { Util } from './util';
 import { CommandHandler } from './command-handler';
@@ -40,8 +39,10 @@ const start = async () => {
     let response: any;
     if (message.from == BROADCAST_STATUS) return
     
-    const prefix = message.body.toString().split(' ')[0];
-    const prompt = util.addPunctuation(message.body.substring(prefix.length + 1));
+    const body = message.body.toString();
+    const firstSpaceIndex = body.indexOf(' ');
+    const prefix = body.substring(0, firstSpaceIndex);
+    const prompt = util.addPunctuation(body.substring(firstSpaceIndex + 1));
 
     try {
       const commandFunction = commandHandler.prefixFunctions[prefix];
@@ -64,7 +65,7 @@ const start = async () => {
         console.log(`[Whatsapp ChatGPT] Answer to ${message.from}: ${response}`);
         console.log(`[Whatsapp ChatGPT] Time elapsed: ${(end - start) / 1000} seconds`);
 
-        if(!response.mimetype) {
+        if(!response.mimetype && !response.error) {
           keywords.forEach((keyword: string) => {
             conversationHistory.storeMessage(message._data.id.remote, keyword.trim().toLocaleLowerCase() , prompt, response);
           });
