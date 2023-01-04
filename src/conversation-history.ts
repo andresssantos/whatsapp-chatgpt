@@ -1,7 +1,5 @@
 const fs = require('fs');
 
-import { Util } from './util';
-
 // Environment variables
 require('dotenv').config()
 
@@ -15,8 +13,7 @@ export class ConversationHistory {
 
   private maxHistorySize = Number(process.env.MAX_HISTORY_SIZE); // tamanho máximo do histórico
 
-  storeMessage(id: string, keyword: string, prompt: string, response: string) {
-    const util = new Util();
+  storeMessage(id: string, keyword: string, prompt: string, completion: string) {
     const maxHistorySize = this.maxHistorySize; // Define o tamanho máximo permitido para o histórico de conversa
   
     // Inicializa a variável data como um array vazio
@@ -24,7 +21,7 @@ export class ConversationHistory {
       keyword: string,
        history: { 
         prompt: string,
-        response: string
+        completion: string
        }[]
       }[] = [];
 
@@ -40,7 +37,7 @@ export class ConversationHistory {
     for (let i = 0; i < data.length; i++) {
       if (data[i].keyword === keyword) {
         // Se a keyword já existir, adiciona o prompt e o response ao atributo history do objeto
-        data[i].history.push({ prompt: prompt, response: response });
+        data[i].history.push({ prompt: prompt, completion: completion });
   
         // Verifica se o tamanho da lista history excede o tamanho máximo permitido
         if (data[i].history.length > maxHistorySize) {
@@ -56,7 +53,7 @@ export class ConversationHistory {
       // Se a keyword não existir, cria um novo objeto com a nova keyword e adiciona prompt e response ao atributo history desse novo objeto
       const newData = {
         keyword: keyword,
-        history: [{ prompt: prompt, response: response }]
+        history: [{ prompt: prompt, completion: completion }]
       };
   
       // Adiciona o novo objeto à lista de objetos

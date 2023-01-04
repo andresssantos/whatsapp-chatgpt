@@ -8,6 +8,7 @@ import { ConversationHistory } from './conversation-history';
 const util = new Util()
 const commandHandler = new CommandHandler();
 const conversationHistory = new ConversationHistory();
+const CONTEXT_SEPARATOR = "###"
 const BROADCAST_STATUS = "status@broadcast"
 const RESPONSE_UNAVAILABLE = "Desculpe, não entendi o que você quer dizer. Pode reformular a pergunta?"
 
@@ -59,7 +60,7 @@ const start = async () => {
         const start = Date.now();  
         response = commandFunction == commandHandler.handleImageCommand ?
            await commandFunction(prompt) :
-           await commandFunction(history + prompt);
+           await commandFunction(history + CONTEXT_SEPARATOR + prompt);
         const end = Date.now();
   
         console.log(`[Whatsapp ChatGPT] Answer to ${message.from}: ${response}`);
