@@ -2,20 +2,16 @@ const qrcode = require("qrcode-terminal");
 const { Client, LocalAuth } = require("whatsapp-web.js");
 
 import { Util } from './util';
-import { CommandHandler } from './command-handler';
+import { OpenAI } from './openai';
 import { ConversationHistory } from './conversation-history';
 
 const util = new Util()
-const commandHandler = new CommandHandler();
-const conversationHistory = new ConversationHistory();
-const CONTEXT_SEPARATOR = "###"
-const BROADCAST_STATUS = "status@broadcast"
-const RESPONSE_UNAVAILABLE = "Desculpe, não entendi o que você quer dizer. Pode reformular a pergunta?"
+const openai = new OpenAI();
+const conversationHistory = new ConversationHistory()
 
-conversationHistory.readAllHistory()
-
-// Environment variables
-require('dotenv').config()
+const separator = " ### "
+const broadcast_status = "status@broadcast"
+const response_unavailable = "Desculpe, não entendi o que você quer dizer. Pode reformular a pergunta?"
 
 // Whatsapp Client
 const client = new Client({
@@ -38,44 +34,42 @@ const start = async () => {
   // Whatsapp message
   client.on("message_create", async (message: any) => {    
     let response: any;
-    if (message.from == BROADCAST_STATUS) return
-    
-    const body = message.body.toString();
-    const firstSpaceIndex = body.indexOf(' ');
-    const prefix = body.substring(0, firstSpaceIndex);
-    const prompt = util.addPunctuation(body.substring(firstSpaceIndex + 1));
+    if (message.from == broadcast_status) return
 
     try {
-      const commandFunction = commandHandler.prefixFunctions[prefix];
+      const body = message.body.toString();
+      const firstSpaceIndex = body.indexOf(' ');
+      const prefix = body.substring(0, firstSpaceIndex);
+
+      const commandFunction = openai.prefixFunctions[prefix];
       
       if(commandFunction) {
+        const prompt = util.addPunctuation(body.substring(firstSpaceIndex + 1));
+      
         console.log(`[Whatsapp ChatGPT] Received prompt from ${message._data.notifyName}: ${prompt}`);
         
-        // Extract keywords from prompt
-        const keywords = await commandHandler.extractKeywords(prompt);
+        const embeddingVector = await openai.createEmbeddingVector(prompt)
+        const history = await conversationHistory.getByChatId(message._data.id.remote, embeddingVector)
 
-        // Filter history by keywords
-        const history = conversationHistory.filterHistoryByKeywords(message._data.id.remote, (keywords.includes('undefined')) ? undefined : keywords)
+        console.log('[Whatsapp ChatGPT] Prompt about to be sent: ' + history + separator + prompt)
 
         const start = Date.now();  
-        response = commandFunction == commandHandler.handleImageCommand ?
+        response = commandFunction == openai.handleImageCommand ?
            await commandFunction(prompt) :
-           await commandFunction(history + CONTEXT_SEPARATOR + prompt);
+           await commandFunction(history + separator + prompt);
         const end = Date.now();
   
         console.log(`[Whatsapp ChatGPT] Answer to ${message.from}: ${response}`);
         console.log(`[Whatsapp ChatGPT] Time elapsed: ${(end - start) / 1000} seconds`);
 
         if(!response.mimetype && !response.error) {
-          keywords.forEach((keyword: string) => {
-            conversationHistory.storeMessage(message._data.id.remote, keyword.trim().toLocaleLowerCase() , prompt, response);
-          });
-        }              
+          await conversationHistory.save(message._data.id.remote, message.timestamp, prompt, response, embeddingVector)
+        }
 
         if(typeof response !== 'undefined' && response !== '' && response.error == undefined) {
           message.reply(response);
         } else {
-          message.reply(RESPONSE_UNAVAILABLE);
+          message.reply(response_unavailable);
         }
       }
     } catch (error) {

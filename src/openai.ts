@@ -1,4 +1,4 @@
-const { Client, LocalAuth, MessageMedia } = require("whatsapp-web.js");
+const { MessageMedia } = require("whatsapp-web.js");
 const { Configuration, OpenAIApi } = require('openai');
 const gTTS = require('gtts');
 const delay = require('delay');
@@ -10,37 +10,21 @@ const openai = new OpenAIApi(new Configuration({
   apiKey: process.env.OPENAI_API_KEY,
 }));
 
-// Whatsapp Client
-const client = new Client({
-  authStrategy: new LocalAuth()
-});
+export class OpenAI {
 
-export class CommandHandler {
-  extractKeywords = async (prompt: any) => {
+  createEmbeddingVector = async (prompt: any) => {
     try {
-      const response = await openai.createCompletion({
-        model: "text-davinci-003",
-        prompt: `Extract the keywords from this text if there is a person's name in it other than the word name, otherwise, return undefined. Return without any additional words: ${prompt}.`,
-        temperature: 0.5,
-        max_tokens: 60,
-        top_p: 1.0,
-        frequency_penalty: 0.8,
-        presence_penalty: 0.0,
-      })
+      const response = await openai.createEmbedding({
+        model: "text-embedding-ada-002",
+        input: prompt,
+      });
 
-      return response.data.choices[0].text.replace(/\r?\n/g, '').trim().toLocaleLowerCase().split(',')
+      return response.data.data
     } catch (error) {
-      if (error.response) {
-        console.log(error.response.status);
-        console.log(error.response.data);
-        return error.response.data
-      } else {
-        console.log(error.message);
-        return error.message
-      }
+      console.error(error);
     }
   }
-  
+
   handleTextCommand = async (prompt: any) => {
       try {
         const response = await openai.createCompletion({
@@ -92,7 +76,7 @@ export class CommandHandler {
   
     await gtts.save('audio.opus', function (err, result){
         if(err) { throw new Error(err); }
-        console.log("Text to speech converted!");
+        console.log("[GTTS] Text to speech converted!");
     });
   
     await delay(2000);
