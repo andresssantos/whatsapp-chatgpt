@@ -9,7 +9,7 @@ const util = new Util()
 const openai = new OpenAI();
 const conversationHistory = new ConversationHistory()
 
-const separator = " ### "
+const intro = "Muito prazer, meu nome é Jarvis. Eu sou um assistente virtual muito inteligente. Se você me fizer uma pergunta que esteja enraizada na verdade, eu lhe darei a resposta. Se você me fizer uma pergunta sem sentido, enganosa ou sem resposta clara, talvez eu não consiga responder.\n\n"
 const broadcast_status = "status@broadcast"
 const response_unavailable = "Desculpe, não entendi o que você quer dizer. Pode reformular a pergunta?"
 
@@ -51,12 +51,12 @@ const start = async () => {
         const embeddingVector = await openai.createEmbeddingVector(prompt)
         const history = await conversationHistory.getByChatId(message._data.id.remote, embeddingVector)
 
-        console.log('[Whatsapp ChatGPT] Prompt about to be sent: ' + history + separator + prompt)
+        console.log(`[Whatsapp ChatGPT] Prompt about to be sent:\n${intro}${history}${prompt}`)
 
         const start = Date.now();  
         response = commandFunction == openai.handleImageCommand ?
            await commandFunction(prompt) :
-           await commandFunction(history + separator + prompt);
+           await commandFunction(intro + history + prompt);
         const end = Date.now();
   
         console.log(`[Whatsapp ChatGPT] Answer to ${message.from}: ${response}`);

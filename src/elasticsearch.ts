@@ -5,7 +5,7 @@ require('dotenv').config()
 
 // Elasticsearch client
 const elastic = new elasticsearch.Client({
-    host: 'https://elastic:elastic@localhost:9200',
+    host: 'https://elastic:elastic@ec2-54-165-57-42.compute-1.amazonaws.com:9200',
     auth: {
       username: 'elastic',
       password: 'elastic',
@@ -63,7 +63,7 @@ const elastic = new elasticsearch.Client({
       })
       
       return hits
-          .filter((hit) => hit._score >= 0.86)
+          .filter((hit) => hit._score >= 0.8)
           .sort((a, b) => a._score - b._score)
           .slice(0, 10);
     }

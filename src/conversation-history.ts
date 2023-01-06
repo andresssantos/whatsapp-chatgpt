@@ -19,10 +19,10 @@ export class ConversationHistory {
   
       if (documentsByCosineSimilarity.length === 0) {
         const lastDocuments = await elasticsearch.getLastDocuments(id, 10)
-        contextHistory = util.transformToString(lastDocuments.reverse())
+        contextHistory = util.transformToQAFormat(lastDocuments.reverse())
         console.log('[Conversation-history] History by last documents:' + JSON.stringify(contextHistory, null, 2))
       } else {
-        contextHistory = util.transformToString(documentsByCosineSimilarity)
+        contextHistory = util.transformToQAFormat(documentsByCosineSimilarity)
         console.log('[Conversation-history] History by cosine similarity:' + JSON.stringify(contextHistory, null, 2))
       }  
     }

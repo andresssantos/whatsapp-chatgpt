@@ -11,12 +11,12 @@ export class Util {
       }
     }
 
-    transformToString(documents: any){
+    transformToQAFormat(documents: any){
       let resultString = '';
 
       for (const obj of documents) {
-        const prompt = obj._source.prompt;
-        const completion = obj._source.completion;
+        const prompt = obj._source.prompt + '\n';
+        const completion = obj._source.completion + '\n\n';
         resultString += `${prompt}${completion}`;
       }
 
