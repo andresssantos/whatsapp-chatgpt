@@ -63,7 +63,7 @@ const elastic = new elasticsearch.Client({
       })
       
       return hits
-          .filter((hit) => hit._score >= 0.8)
+          .filter((hit) => hit._score >= 0.86)
           .sort((a, b) => a._score - b._score)
           .slice(0, 10);
     }

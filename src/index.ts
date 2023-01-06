@@ -33,44 +33,50 @@ const start = async () => {
   
   // Whatsapp message
   client.on("message_create", async (message: any) => {    
-    let response: any;
-    if (message.from == broadcast_status) return
-
+    if (message.from == broadcast_status) return;
+  
     try {
       const body = message.body.toString();
       const firstSpaceIndex = body.indexOf(' ');
       const prefix = body.substring(0, firstSpaceIndex);
-
-      const commandFunction = openai.prefixFunctions[prefix];
-      
-      if(commandFunction) {
-        const prompt = util.addPunctuation(body.substring(firstSpaceIndex + 1));
-      
-        console.log(`[Whatsapp ChatGPT] Received prompt from ${message._data.notifyName}: ${prompt}`);
-        
-        const embeddingVector = await openai.createEmbeddingVector(prompt)
-        const history = await conversationHistory.getByChatId(message._data.id.remote, embeddingVector)
-
-        console.log(`[Whatsapp ChatGPT] Prompt about to be sent:\n${intro}${history}${prompt}`)
-
-        const start = Date.now();  
-        response = commandFunction == openai.handleImageCommand ?
-           await commandFunction(prompt) :
-           await commandFunction(intro + history + prompt);
-        const end = Date.now();
   
-        console.log(`[Whatsapp ChatGPT] Answer to ${message.from}: ${response}`);
-        console.log(`[Whatsapp ChatGPT] Time elapsed: ${(end - start) / 1000} seconds`);
-
-        if(!response.mimetype && !response.error) {
-          await conversationHistory.save(message._data.id.remote, message.timestamp, prompt, response, embeddingVector)
-        }
-
-        if(typeof response !== 'undefined' && response !== '' && response.error == undefined) {
-          message.reply(response);
-        } else {
-          message.reply(response_unavailable);
-        }
+      const commandFunction = openai.prefixFunctions[prefix];
+  
+      if (!commandFunction) return;
+  
+      let prompt: any;
+      let response: any;
+      let embeddingVector: any;
+      let history: any;
+  
+      prompt = util.addPunctuation(body.substring(firstSpaceIndex + 1));
+  
+      console.log(`[Whatsapp ChatGPT] Received prompt from ${message._data.notifyName}: ${prompt}`);
+  
+      if (commandFunction == openai.handleTextCommand) {
+        embeddingVector = await openai.createEmbeddingVector(prompt);
+        history = await conversationHistory.getByChatId(message._data.id.remote, embeddingVector);
+  
+        prompt = `${intro}${history}${prompt}`;
+      }
+      
+      console.log(`[Whatsapp ChatGPT] Prompt about to be sent:\n${prompt}`);
+  
+      const start = Date.now();  
+      response = await commandFunction(prompt);
+      const end = Date.now();
+  
+      console.log(`[Whatsapp ChatGPT] Answer to ${message.from}: ${response}`);
+      console.log(`[Whatsapp ChatGPT] Time elapsed: ${(end - start) / 1000} seconds`);
+  
+      if (!response.mimetype && !response.error) {
+        await conversationHistory.save(message._data.id.remote, message.timestamp, prompt, response, embeddingVector);
+      }
+  
+      if (typeof response !== 'undefined' && response !== '' && response.error == undefined) {
+        message.reply(response);
+      } else {
+        message.reply(response_unavailable);
       }
     } catch (error) {
       console.error(error);
