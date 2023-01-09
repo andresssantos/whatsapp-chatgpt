@@ -44,12 +44,13 @@ const start = async () => {
   
       if (!commandFunction) return;
   
-      let prompt: any;
+      let promptWithHistoryAndIntro: any;
       let response: any;
       let embeddingVector: any;
       let history: any;
   
-      prompt = util.addPunctuation(body.substring(firstSpaceIndex + 1));
+      const prompt = util.addPunctuation(body.substring(firstSpaceIndex + 1));
+      promptWithHistoryAndIntro = prompt;
   
       console.log(`[Whatsapp ChatGPT] Received prompt from ${message._data.notifyName}: ${prompt}`);
   
@@ -57,13 +58,13 @@ const start = async () => {
         embeddingVector = await openai.createEmbeddingVector(prompt);
         history = await conversationHistory.getByChatId(message._data.id.remote, embeddingVector);
   
-        prompt = `${intro}${history}${prompt}`;
+        promptWithHistoryAndIntro = `${intro}${history}${prompt}`;
       }
       
-      console.log(`[Whatsapp ChatGPT] Prompt about to be sent:\n${prompt}`);
+      console.log(`[Whatsapp ChatGPT] Prompt about to be sent:\nINTRO:\n${intro}HISTORY:\n${history}PROMPT:\n${prompt}`);
   
       const start = Date.now();  
-      response = await commandFunction(prompt);
+      response = await commandFunction(promptWithHistoryAndIntro);
       const end = Date.now();
   
       console.log(`[Whatsapp ChatGPT] Answer to ${message.from}: ${response}`);
